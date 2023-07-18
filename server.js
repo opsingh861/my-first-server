@@ -1,59 +1,57 @@
-const http = require("http")
+const express = require("express")
+
+// initialization
+const app = express()
+
+const toDoList = ["Complete Node Byte", "Play Cricket"]
+
+// application will now use json format for data
+app.use(express.json())
 
 const port = 8081
-let body = ""
 
-const todoList = ["Complete Node Byte", "Play Cricket"]
 
-http.createServer((request, response) => {
-    const { method, url } = request;
-    console.log(method, url)
-    if (url === "/todos") {
-        if (method === "GET") {
-            response.writeHead(200, { "Content-Type": "text/html" })
-            response.write(todoList.toString())
+// http://localhost:8081/todos
+app.get("/todos", (request, response) => {
+    response.status(200).send(toDoList)
+})
+
+app.listen(port, () => {
+    console.log(`Nodejs server starte d on port ${port}`)
+})
+
+app.post("/todos", (request, response) => {
+    let newToDoItem = request.body.item;
+    toDoList.push(newToDoItem);
+    response.status(201).send({
+        message: "Task added successfully"
+    })
+})
+
+
+app.delete("/todos", (request, response) => {
+    const itemToDelete = request.body.item;
+
+    toDoList.find((element, index) => {
+        if (element === itemToDelete) {
+            toDoList.splice(index, 1)
         }
-        else if (method === "POST") {
-            request.on("error", (err) => {
-                console.log(err)
-            }).on("data", (chunk) => {
-                let body = ""
-                body += chunk;
-                // console.log(chunk)
-            }).on("end", () => {
-                body = JSON.parse(body);
-                // console.log("data: ", body)
-                let newToDo = todoList;
-                newToDo.push(body.Item)
-                console.log(newToDo)
-                response.writeHead(201)
-            })
-        } else if (method === "DELETE") {
-            // let body = "";
-            request.on("error", (err) => {
-                console.log(err)
-            }).on("data", (chunk) => { 
-                body += chunk;
+    })
 
-            }).on("end", () => {
-                body = JSON.parse(body);
-                let deleteThis = body.Item;
+    response.status(200).send({
+        message: `Deleted item -${request.body.item}`
+    })
+})
 
-                for (let i = 0; i < todoList.length; i++) {
-                    if (todoList[i] === deleteThis) {
-                        todoList.splice(i, 1)
-                        break;
-                    }
-                }
-                console.log(todoList)
-            })
-        }
-    }
 
-    response.end();
-}).listen(port, () => {
-    console.log(`Nodejs server started on port ${port}`)
-});
+// all the other methods
+app.all("/todos", (request, response) => {
+    response.status(501).send();
+})
 
+// all the other routes
+app.all("*", (request, response) => {
+    response.status(404).send()
+})
 
 // http:localhost:8081 
